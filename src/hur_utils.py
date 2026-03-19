@@ -606,7 +606,7 @@ def select_reference_values(reference_df, group="adult", gender="female"):
 
 def get_reference_values(group="adult", gender="female", csv_path=None):
     if csv_path is None:
-        raise ValueError("csv_path must be provided.")
+        csv_path = download_from_github(REFERENCE_FILE, destination=REFERENCE_FILE)
     return select_reference_values(load_reference_values(csv_path), group=group, gender=gender)
 
 

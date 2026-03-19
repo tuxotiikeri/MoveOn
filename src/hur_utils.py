@@ -46,6 +46,7 @@ CASE_FILES = {
     "Hamstrings": "hamstrings_hur_measurement.xls",
     "Knee OA": "knee_oa_hur_measurement.xls",
     "Menisci": "menisci_hur_measurement.xls",
+    "Example": "example_hur_measurement.xls"
 }
 
 REFERENCE_FILE = "isometric_reference_values_tidy.csv"

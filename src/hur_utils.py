@@ -429,10 +429,12 @@ def show_case_metadata(case):
 
 
 def show_lever_arm_check(case, actual_lever_mm, affected_limb, group):
+    print('-----')
     print(f"Lever arm from software: {int(round(case['export_lever_mm']))} mm")
     print(f"User defined lever arm: {int(round(actual_lever_mm))} mm")
     print(f"Affected side: {str(affected_limb).title()}")
     print(f"Group: {group}")
+    print('')
     if int(round(actual_lever_mm)) != int(round(case["export_lever_mm"])):
         print("Using the user defined lever arm.")
 

@@ -29,6 +29,15 @@ from matplotlib.patches import Patch
 sns.set_theme(style="white")
 plt.rcParams["axes.grid"] = False
 
+# Smaller default plot sizes for notebook use
+DEFAULT_FIGSIZE = (8, 4.5)
+DEFAULT_RELPLOT_HEIGHT = 3.8
+DEFAULT_RELPLOT_ASPECT = 1.0
+
+# Reference text box off by default
+SHOW_REFERENCE_TEXTBOX = False
+SHOW_REFERENCE_LEGEND = True
+
 # ---------------------------------------------------------
 # GitHub data source configuration
 # ---------------------------------------------------------
@@ -497,26 +506,28 @@ def make_peak_plot_df(peaks_corrected):
     return plot_df
 
 
-def plot_peak_torque(peaks_corrected):
+def plot_peak_torque(peaks_corrected, figsize=DEFAULT_FIGSIZE):
     plot_df = make_peak_plot_df(peaks_corrected)
 
-    fig1, ax1 = plt.subplots(figsize=(10, 6))
+    fig1, ax1 = plt.subplots(figsize=figsize)
     sns.barplot(data=plot_df, x="Direction", y="torque_nm", hue="Limb", ax=ax1)
     add_bar_values(ax1, fmt="%.1f")
-    add_headroom(ax1, plot_df["torque_nm"].to_numpy(), extra_frac=0.15)
+    add_headroom(ax1, plot_df["torque_nm"].to_numpy(), extra_frac=0.12)
     ax1.set_title("Peak torque (Nm)")
     ax1.set_xlabel("Movement direction")
     ax1.set_ylabel("Peak torque (Nm)")
     clean_axes(ax1)
+    fig1.tight_layout()
 
-    fig2, ax2 = plt.subplots(figsize=(10, 6))
+    fig2, ax2 = plt.subplots(figsize=figsize)
     sns.barplot(data=plot_df, x="Direction", y="torque_nmkg", hue="Limb", ax=ax2)
     add_bar_values(ax2, fmt="%.2f")
-    add_headroom(ax2, plot_df["torque_nmkg"].to_numpy(), extra_frac=0.15)
+    add_headroom(ax2, plot_df["torque_nmkg"].to_numpy(), extra_frac=0.12)
     ax2.set_title("Peak torque normalised to body mass (Nm/kg)")
     ax2.set_xlabel("Movement direction")
     ax2.set_ylabel("Peak torque (Nm/kg)")
     clean_axes(ax2)
+    fig2.tight_layout()
 
     return fig1, fig2
 
@@ -669,8 +680,14 @@ def _set_combined_legend(ax):
     ax.legend(handles + ref_handles, labels + ["Reference mean", "Reference range (95% CI)"], title="")
 
 
-def plot_peak_torque_with_reference(peaks_corrected, reference_selection):
-    fig1, fig2 = plot_peak_torque(peaks_corrected)
+def plot_peak_torque_with_reference(
+    peaks_corrected,
+    reference_selection,
+    figsize=DEFAULT_FIGSIZE,
+    show_reference_text=SHOW_REFERENCE_TEXTBOX,
+    show_reference_legend=SHOW_REFERENCE_LEGEND,
+):
+    fig1, fig2 = plot_peak_torque(peaks_corrected, figsize=figsize)
     ax1 = fig1.axes[0]
     ax2 = fig2.axes[0]
 
@@ -685,7 +702,7 @@ def plot_peak_torque_with_reference(peaks_corrected, reference_selection):
                 reference_selection["normalization_type"] == "non_normalized", "ci_high"
             ].to_numpy(),
         ]),
-        extra_frac=0.32,
+        extra_frac=0.18,
     )
 
     add_headroom(
@@ -696,30 +713,38 @@ def plot_peak_torque_with_reference(peaks_corrected, reference_selection):
                 reference_selection["normalization_type"] == "body_mass_normalized", "ci_high"
             ].to_numpy(),
         ]),
-        extra_frac=0.38,
+        extra_frac=0.18,
     )
 
-    ax1.text(
-        0.02, 0.98,
-        _reference_box_text(reference_selection, "non_normalized"),
-        transform=ax1.transAxes,
-        ha="left",
-        va="top",
-        fontsize=9,
-        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.9, edgecolor="0.8"),
-    )
-    ax2.text(
-        0.02, 0.98,
-        _reference_box_text(reference_selection, "body_mass_normalized"),
-        transform=ax2.transAxes,
-        ha="left",
-        va="top",
-        fontsize=9,
-        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.9, edgecolor="0.8"),
-    )
+    if show_reference_text:
+        ax1.text(
+            0.02, 0.98,
+            _reference_box_text(reference_selection, "non_normalized"),
+            transform=ax1.transAxes,
+            ha="left",
+            va="top",
+            fontsize=9,
+            bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.9, edgecolor="0.8"),
+        )
+        ax2.text(
+            0.02, 0.98,
+            _reference_box_text(reference_selection, "body_mass_normalized"),
+            transform=ax2.transAxes,
+            ha="left",
+            va="top",
+            fontsize=9,
+            bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.9, edgecolor="0.8"),
+        )
 
-    _set_combined_legend(ax1)
-    _set_combined_legend(ax2)
+    if show_reference_legend:
+        _set_combined_legend(ax1)
+        _set_combined_legend(ax2)
+    else:
+        ax1.legend(title="")
+        ax2.legend(title="")
+
+    fig1.tight_layout()
+    fig2.tight_layout()
     plt.show()
 
 
@@ -802,7 +827,13 @@ def make_force_time_preview(ft_long, n=10):
     return preview
 
 
-def plot_force_time_curves(ft_long, aligned=False, title=None):
+def plot_force_time_curves(
+    ft_long,
+    aligned=False,
+    title=None,
+    height=DEFAULT_RELPLOT_HEIGHT,
+    aspect=DEFAULT_RELPLOT_ASPECT,
+):
     xcol = "time_ms_aligned" if aligned else "time_ms"
     xlabel = "Time from onset (ms)" if aligned else "Time (ms)"
 
@@ -813,8 +844,8 @@ def plot_force_time_curves(ft_long, aligned=False, title=None):
         hue="limb",
         col="direction",
         kind="line",
-        height=5,
-        aspect=1.1,
+        height=height,
+        aspect=aspect,
     )
     g.set_axis_labels(xlabel, "Torque (Nm)")
     g.set_titles("{col_name}")
@@ -824,7 +855,9 @@ def plot_force_time_curves(ft_long, aligned=False, title=None):
 
     sns.despine(fig=g.fig)
     if title:
-        g.fig.suptitle(title, y=1.03)
+        g.fig.suptitle(title, y=1.02)
+
+    g.fig.tight_layout()
     plt.show()
 
 
@@ -887,7 +920,7 @@ def show_rfd_summary(rfd_summary):
     return out
 
 
-def plot_rfd_bars(rfd_summary, interval_ms=100):
+def plot_rfd_bars(rfd_summary, interval_ms=100, figsize=DEFAULT_FIGSIZE):
     interval_ms = int(interval_ms)
     rfd_plot = rfd_summary.copy()
     rfd_plot["Limb"] = rfd_plot["limb"].str.title()
@@ -896,28 +929,28 @@ def plot_rfd_bars(rfd_summary, interval_ms=100):
     nm_col = f"torque_nm_rfd_{interval_ms}ms"
     nmkg_col = f"torque_nmkg_rfd_{interval_ms}ms"
 
-    fig1, ax1 = plt.subplots(figsize=(10, 6))
+    fig1, ax1 = plt.subplots(figsize=figsize)
     sns.barplot(data=rfd_plot, x="Direction", y=nm_col, hue="Limb", ax=ax1)
     add_bar_values(ax1, fmt="%.1f")
-    add_headroom(ax1, rfd_plot[nm_col].to_numpy(), extra_frac=0.15)
+    add_headroom(ax1, rfd_plot[nm_col].to_numpy(), extra_frac=0.12)
     ax1.set_title(f"RFD{interval_ms} (Nm/s)")
     ax1.set_xlabel("Movement direction")
     ax1.set_ylabel(f"RFD{interval_ms} (Nm/s)")
     ax1.legend(title="")
     clean_axes(ax1)
-    plt.tight_layout()
+    fig1.tight_layout()
     plt.show()
 
-    fig2, ax2 = plt.subplots(figsize=(10, 6))
+    fig2, ax2 = plt.subplots(figsize=figsize)
     sns.barplot(data=rfd_plot, x="Direction", y=nmkg_col, hue="Limb", ax=ax2)
     add_bar_values(ax2, fmt="%.2f")
-    add_headroom(ax2, rfd_plot[nmkg_col].to_numpy(), extra_frac=0.15)
+    add_headroom(ax2, rfd_plot[nmkg_col].to_numpy(), extra_frac=0.12)
     ax2.set_title(f"RFD{interval_ms} (Nm/kg/s)")
     ax2.set_xlabel("Movement direction")
     ax2.set_ylabel(f"RFD{interval_ms} (Nm/kg/s)")
     ax2.legend(title="")
     clean_axes(ax2)
-    plt.tight_layout()
+    fig2.tight_layout()
     plt.show()
 
 
